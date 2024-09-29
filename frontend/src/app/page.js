@@ -1,101 +1,164 @@
-import Image from "next/image";
+'use client'
+
+import Modal from "@/components/modal";
+import { APIURL } from "@/const/const";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [todo, setTodo] = useState([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [todoAdd, setTodoAdd] = useState({});
+  const [todoEdit, setTodoEdit] = useState({});
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleChangeAdd = (e) => {
+    const name = e.target.name;
+    const value = e.target.value;
+
+    setTodoAdd({
+      ...todoAdd,
+      [name]: (name == 'done') ? (e.target.checked ? true : false) : value
+    })
+  }
+
+  const handleChangeEdit = (e) => {
+    const name = e.target.name;
+    const value = e.target.value;
+    console.log(value);
+
+    setTodoEdit({
+      ...todoEdit,
+      [name]: (name == 'done') ? (e.target.checked ? true : false) : value
+    })
+  }
+
+  const getTodo = async () => {
+    const response = await fetch(`${APIURL}/api/todo/`)
+    const data = await response.json();
+    setTodo(data);
+  }
+
+  const toggleAdd = async () => {
+    setShowAdd(!showAdd);
+  }
+
+  const toggleEdit = async (todo) => {
+    setTodoEdit(todo);
+    setShowEdit(!showEdit);
+  }
+
+  const addTodo = async (e) => {
+    e.preventDefault();
+    const response = await fetch(`${APIURL}/api/todo/`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(todoAdd),
+    })
+    toggleAdd();
+    getTodo();
+  }
+
+  const editTodo = async (e) => {
+    e.preventDefault();
+    const response = await fetch(`${APIURL}/api/todo/${todoEdit.id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(todoEdit),
+    })
+    toggleEdit();
+    getTodo();
+  }
+
+  const deleteTodo = async () => {
+    const response = await fetch(`${APIURL}/api/todo/${todoEdit.id}/`, {
+      method: 'DELETE',
+    })
+    toggleEdit();
+    getTodo();
+  }
+
+  useEffect(() => {
+    getTodo();
+  }, [])
+
+  return (
+    <>
+      <div className="wrapper my-12 mx-32">
+        <h4 className="text-3xl mb-2">Todo Hadana</h4>
+        <h4 className="text-lg text-slate-400">Ya Pokonya Todo CRUD Hadana</h4>
+
+        <button onClick={toggleAdd} className="my-4 bg-blue-500 text-white px-4 py-2 rounded mb-12">
+          Tambah
+        </button>
+
+        <div className="grid grid-cols-4 gap-4">
+          {todo.map((item, index) => {
+            const date = new Date(item.date);
+            const formattedDate = ` ${date.getDate()} ${date.toLocaleString('default', { month: 'long' })} ${date.getFullYear()}`
+
+
+            return <div key={index} onClick={() => toggleEdit(item)} className="w-full p-8 bg-slate-800 rounded-md relative">
+              <h5 className="text-slate-100 font-bold mb-1 text-xl">{item.title}</h5>
+              <h6 className="text-slate-400 mb-2 text-md">{formattedDate}</h6>
+              {item.done ?
+                <div className="bg-green-500 px-3 py-1 inline rounded-full text-sm">
+                  Selesai
+                </div>
+                :
+                <div className="bg-red-500 px-3 py-1 inline rounded-full text-sm">
+                  Belum Selesai
+                </div>
+              }
+            </div>
+          })}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
+
+
+      <Modal isOpen={showAdd} onClose={toggleAdd}>
+        <h2 className="text-lg font-semibold">Tambah Todo</h2>
+        <p className="mt-1">Ya pokonya tambah Todo</p>
+        <form onSubmit={addTodo}>
+          <input placeholder="Nama Todo" name="title" onChange={handleChangeAdd} className="border w-full mt-2 bg-slate-900 border-gray-900 rounded-lg p-2 focus:outline-none focus:ring-0 focus:ring-blue-900" required></input>
+
+          <div className="flex items-center mt-3">
+            <input name="done" onChange={handleChangeAdd} id="done-add" type="checkbox" className="form-checkbox h-5 w-5 text-blue-600 border-gray-300 bg-slate-900 rounded" />
+            <label htmlFor="done-add" className="ml-2">Selesai</label>
+          </div>
+
+          <button type="submit" onClick={() => console.log(todoAdd)} className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded">
+            Simpan
+          </button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)}>
+        <h2 className="text-lg font-semibold">Edit Todo</h2>
+        <p className="mt-1">Ya pokonya edit Todo</p>
+        <form onSubmit={editTodo}>
+          <input placeholder="Nama Todo" value={todoEdit?.title ?? ''} name="title" onChange={handleChangeEdit} className="border w-full mt-2 bg-slate-900 border-gray-900 rounded-lg p-2 focus:outline-none focus:ring-0 focus:ring-blue-900" required></input>
+
+          <div className="flex items-center mt-3">
+            <input name="done" onChange={handleChangeEdit} id="done-add" type="checkbox" className="form-checkbox h-5 w-5 text-blue-600 border-gray-300 bg-slate-900 rounded" defaultChecked={todoEdit?.done ?? false} />
+            <label htmlFor="done-add" className="ml-2">Selesai</label>
+          </div>
+
+          <div class="flex gap-5">
+            <button type="submit" onClick={() => console.log(todoAdd)} className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded">
+              Simpan
+            </button>
+            <a onClick={deleteTodo} className="mt-4 w-full bg-red-500 text-white px-4 py-2 rounded cursor-pointer text-center">
+              Hapus
+            </a>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }
